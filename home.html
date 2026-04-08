@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Coco Mining</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body{
+      margin:0;
+      font-family:Arial;
+      background:linear-gradient(135deg,#ff7b00,#ffb347);
+      text-align:center;
+      color:white;
+    }
+
+    .card{
+      background:white;
+      color:black;
+      margin:15px;
+      padding:20px;
+      border-radius:15px;
+    }
+
+    .btn{
+      padding:12px;
+      width:90%;
+      border:none;
+      border-radius:10px;
+      background:#ff7b00;
+      color:white;
+      margin-top:10px;
+      cursor:pointer;
+    }
+
+    input{
+      padding:10px;
+      width:80%;
+      margin-top:10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>⛏️ Coco Mining</h2>
+<p id="user"></p>
+
+<div class="card">
+  <h3>💰 Balance</h3>
+  <h2 id="balance">0</h2>
+</div>
+
+<div class="card">
+  <h3>💎 VIP</h3>
+  <p>VIP Level: <span id="vip">0</span></p>
+</div>
+
+<div class="card">
+  <h3>💸 Buy VIP</h3>
+  <input id="vipAmount" placeholder="Enter amount">
+  <button class="btn" onclick="buyVIP(1)">VIP1</button>
+  <button class="btn" onclick="buyVIP(2)">VIP2</button>
+  <button class="btn" onclick="buyVIP(3)">VIP3</button>
+  <button class="btn" onclick="buyVIP(4)">VIP4</button>
+</div>
+
+<div class="card">
+  <h3>👥 Invite</h3>
+  <p>Code: <span id="code"></span></p>
+</div>
+
+<button class="btn" onclick="logout()">Logout</button>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, getDoc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4",
+  storageBucket: "coco-website-aafe4.firebasestorage.app",
+  messagingSenderId: "970278650841",
+  appId: "1:970278650841:web:248a3a4be7365d03f80fc8"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+let balance = 0;
+let vip = 0;
+let vipAmount = 0;
+let lastProfit = 0;
+let referredBy = "";
+let inviteCode = "";
+
+// 🔥 LOAD DATA
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    currentUser = user;
+    document.getElementById("user").innerText = user.email;
+
+    const ref = doc(db,"users",user.uid);
+    const snap = await getDoc(ref);
+
+    if(snap.exists()){
+      let data = snap.data();
+
+      balance = data.balance || 0;
+      vip = data.vip || 0;
+      vipAmount = data.vipAmount || 0;
+      lastProfit = data.lastProfit || 0;
+      referredBy = data.referredBy || "";
+      inviteCode = data.inviteCode || user.uid.substring(0,6);
+
+      document.getElementById("balance").innerText = Math.floor(balance);
+      document.getElementById("vip").innerText = vip;
+      document.getElementById("code").innerText = inviteCode;
+
+      // save invite code
+      await updateDoc(ref,{inviteCode:inviteCode});
+
+      // 🔥 AUTO MINING RUN
+      await autoMining();
+    }
+
+  }else{
+    window.location.href="index.html";
+  }
+});
+
+// 💰 AUTO MINING (24hr)
+async function autoMining(){
+
+  let now = Date.now();
+  let oneDay = 86400000;
+
+  if(now - lastProfit < oneDay) return;
+  if(vip == 0) return;
+
+  let percent = 0;
+
+  if(vip==1) percent=0.01;
+  if(vip==2) percent=0.015;
+  if(vip==3) percent=0.02;
+  if(vip==4) percent=0.025;
+
+  let profit = vipAmount * percent;
+
+  balance += profit;
+  lastProfit = now;
+
+  document.getElementById("balance").innerText = Math.floor(balance);
+
+  await updateDoc(doc(db,"users",currentUser.uid),{
+    balance: balance,
+    lastProfit: lastProfit
+  });
+
+  // 👥 REFERRAL BONUS
+  if(referredBy){
+
+    const inviterRef = doc(db,"users",referredBy);
+    const inviterSnap = await getDoc(inviterRef);
+
+    if(inviterSnap.exists()){
+      let inviterData = inviterSnap.data();
+      let bonus = profit * 0.02;
+
+      await updateDoc(inviterRef,{
+        balance: (inviterData.balance || 0) + bonus
+      });
+    }
+  }
+
+  alert("Daily profit added 💰");
+}
+
+// 💎 BUY VIP
+window.buyVIP = async function(level){
+
+  let amount = parseInt(document.getElementById("vipAmount").value);
+
+  if(!amount || amount <= 0){
+    alert("Enter valid amount");
+    return;
+  }
+
+  vip = level;
+  vipAmount = amount;
+
+  document.getElementById("vip").innerText = vip;
+
+  await updateDoc(doc(db,"users",currentUser.uid),{
+    vip: vip,
+    vipAmount: vipAmount
+  });
+
+  alert("VIP Activated");
+}
+
+// 🚪 LOGOUT
+window.logout = function(){
+  signOut(auth);
+}
+
+</script>
+
+</body>
+</html>
