@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body{
+      font-family:Arial;
+      background:#0f172a;
+      color:white;
+      text-align:center;
+      margin:0;
+    }
+
+    h2{margin:20px;}
+
+    .card{
+      background:#1e293b;
+      margin:15px;
+      padding:15px;
+      border-radius:12px;
+    }
+
+    input{
+      padding:10px;
+      width:80%;
+      margin-top:10px;
+      border-radius:8px;
+      border:none;
+    }
+
+    button{
+      padding:10px;
+      width:85%;
+      margin-top:10px;
+      border:none;
+      border-radius:8px;
+      background:#00d4aa;
+      color:black;
+      font-weight:bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>⚙️ Settings</h2>
+
+<!-- 💎 VIP BUY -->
+<div class="card">
+  <h3>💎 Buy VIP</h3>
+  <input id="vipAmount" placeholder="Enter amount">
+  <button onclick="buyVIP(1)">VIP1 (1%)</button>
+  <button onclick="buyVIP(2)">VIP2 (1.5%)</button>
+  <button onclick="buyVIP(3)">VIP3 (2%)</button>
+  <button onclick="buyVIP(4)">VIP4 (2.5%)</button>
+</div>
+
+<!-- 🏦 BANK -->
+<div class="card">
+  <h3>🏦 Bank</h3>
+  <p id="balance">0</p>
+</div>
+
+<!-- 💸 WITHDRAW -->
+<div class="card">
+  <h3>💸 Withdraw</h3>
+  <input id="amount" placeholder="Amount">
+  <button onclick="withdraw()">Withdraw</button>
+</div>
+
+<!-- 🔐 PASSWORD -->
+<div class="card">
+  <h3>🔐 Change Password</h3>
+  <input id="newPass" placeholder="New Password">
+  <button onclick="changePassword()">Update</button>
+</div>
+
+<!-- 👥 TEAM -->
+<div class="card">
+  <h3>👥 Invite Code</h3>
+  <p id="code"></p>
+  <button onclick="copyCode()">Copy</button>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, updatePassword } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, getDoc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+let balance = 0;
+let vip = 0;
+let vipAmount = 0;
+let inviteCode = "";
+
+// 🔥 LOAD DATA
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    currentUser = user;
+
+    const ref = doc(db,"users",user.uid);
+    const snap = await getDoc(ref);
+
+    if(snap.exists()){
+      let data = snap.data();
+
+      balance = data.balance || 0;
+      vip = data.vip || 0;
+      vipAmount = data.vipAmount || 0;
+      inviteCode = data.inviteCode || user.uid.substring(0,6);
+
+      document.getElementById("balance").innerText = balance;
+      document.getElementById("code").innerText = inviteCode;
+    }
+
+  }else{
+    window.location.href="index.html";
+  }
+});
+
+// 💎 BUY VIP
+window.buyVIP = async function(level){
+
+  let amount = parseInt(document.getElementById("vipAmount").value);
+
+  if(!amount){
+    alert("Enter amount");
+    return;
+  }
+
+  vip = level;
+  vipAmount = amount;
+
+  await updateDoc(doc(db,"users",currentUser.uid),{
+    vip: vip,
+    vipAmount: vipAmount
+  });
+
+  alert("VIP Activated");
+}
+
+// 💸 WITHDRAW
+window.withdraw = async function(){
+
+  let amount = parseInt(document.getElementById("amount").value);
+
+  if(amount > balance){
+    alert("Not enough");
+    return;
+  }
+
+  balance -= amount;
+
+  document.getElementById("balance").innerText = balance;
+
+  await updateDoc(doc(db,"users",currentUser.uid),{
+    balance: balance
+  });
+
+  alert("Withdraw request sent");
+}
+
+// 🔐 CHANGE PASSWORD
+window.changePassword = async function(){
+
+  let newPass = document.getElementById("newPass").value;
+
+  if(newPass.length < 6){
+    alert("Password must be 6+");
+    return;
+  }
+
+  await updatePassword(currentUser, newPass);
+
+  alert("Password updated");
+}
+
+// 👥 COPY CODE
+window.copyCode = function(){
+  navigator.clipboard.writeText(inviteCode);
+  alert("Copied");
+}
+
+</script>
+
+</body>
+</html>
