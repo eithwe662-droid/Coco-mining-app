@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Coco Mining</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body{
+      margin:0;
+      font-family:Arial;
+      background:#0f172a;
+      color:white;
+      text-align:center;
+    }
+
+    h2{
+      margin-top:20px;
+    }
+
+    .balance{
+      font-size:35px;
+      font-weight:bold;
+      margin:20px 0;
+      color:#00ffcc;
+    }
+
+    /* 🔥 MINING MACHINE */
+    .machine{
+      width:120px;
+      height:120px;
+      margin:40px auto;
+      background:#1e293b;
+      border-radius:20px;
+      position:relative;
+      box-shadow:0 0 20px #00ffcc;
+    }
+
+    .fan{
+      width:60px;
+      height:60px;
+      border:5px solid #00ffcc;
+      border-radius:50%;
+      position:absolute;
+      top:25px;
+      left:25px;
+      animation:spin 1s linear infinite;
+    }
+
+    @keyframes spin{
+      0%{transform:rotate(0deg);}
+      100%{transform:rotate(360deg);}
+    }
+
+    /* COIN FLOAT */
+    .coin{
+      font-size:30px;
+      animation:float 2s infinite;
+    }
+
+    @keyframes float{
+      0%{transform:translateY(0);}
+      50%{transform:translateY(-10px);}
+      100%{transform:translateY(0);}
+    }
+
+    .nav{
+      position:fixed;
+      bottom:0;
+      width:100%;
+      display:flex;
+      justify-content:space-around;
+      background:#1e293b;
+      padding:10px;
+    }
+
+    .nav a{
+      color:white;
+      text-decoration:none;
+      font-size:20px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<h2>⛏️ Coco Mining</h2>
+
+<div class="balance" id="balance">0</div>
+
+<!-- 🔥 MACHINE -->
+<div class="machine">
+  <div class="fan"></div>
+</div>
+
+<div class="coin">💎 Mining...</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="home.html">🏠</a>
+  <a href="vip.html">💎</a>
+  <a href="team.html">👥</a>
+  <a href="settings.html">⚙️</a>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, getDoc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+let balance = 0;
+let vip = 0;
+let vipAmount = 0;
+let lastProfit = 0;
+
+// 🔥 LOAD DATA
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+
+    currentUser = user;
+
+    const ref = doc(db,"users",user.uid);
+    const snap = await getDoc(ref);
+
+    if(snap.exists()){
+      let data = snap.data();
+
+      balance = data.balance || 0;
+      vip = data.vip || 0;
+      vipAmount = data.vipAmount || 0;
+      lastProfit = data.lastProfit || 0;
+
+      document.getElementById("balance").innerText = Math.floor(balance);
+
+      autoMining(); // 🔥 run auto
+    }
+
+  }else{
+    window.location.href="index.html";
+  }
+});
+
+// 💰 AUTO MINING (24hr)
+async function autoMining(){
+
+  let now = Date.now();
+  let oneDay = 86400000;
+
+  if(now - lastProfit < oneDay) return;
+  if(vip == 0) return;
+
+  let percent = 0;
+
+  if(vip==1) percent=0.01;
+  if(vip==2) percent=0.015;
+  if(vip==3) percent=0.02;
+  if(vip==4) percent=0.025;
+
+  let profit = vipAmount * percent;
+
+  balance += profit;
+  lastProfit = now;
+
+  document.getElementById("balance").innerText = Math.floor(balance);
+
+  await updateDoc(doc(db,"users",currentUser.uid),{
+    balance: balance,
+    lastProfit: lastProfit
+  });
+}
+
+</script>
+
+</body>
+</html>
