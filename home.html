@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>⛏️ Mining Dashboard</h2>
+
+<p id="user"></p>
+<p id="balance">Balance: 0</p>
+<p id="timer">Ready</p>
+
+<button onclick="mine()">Start Mining</button>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, getDoc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4",
+  storageBucket: "coco-website-aafe4.firebasestorage.app",
+  messagingSenderId: "970278650841",
+  appId: "1:970278650841:web:248a3a4be7365d03f80fc8"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+let balance = 0;
+let lastClaim = 0;
+
+// CHECK LOGIN
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    currentUser = user;
+    document.getElementById("user").innerText = "Welcome: " + user.email;
+
+    const docRef = doc(db, "users", user.uid);
+    const snap = await getDoc(docRef);
+
+    if(snap.exists()){
+      balance = snap.data().balance;
+      lastClaim = snap.data().lastClaim || 0;
+      document.getElementById("balance").innerText = "Balance: " + balance;
+    }
+
+  }else{
+    window.location.href = "index.html";
+  }
+});
+
+// MINING FUNCTION
+window.mine = async function(){
+
+  let now = Date.now();
+  let cooldown = 10000; // 10 sec demo (change to 86400000 = 24hr)
+
+  if(now - lastClaim < cooldown){
+    let remain = Math.floor((cooldown - (now - lastClaim)) / 1000);
+    document.getElementById("timer").innerText = "Wait: " + remain + " sec";
+    return;
+  }
+
+  // Reward
+  let reward = 50;
+  balance += reward;
+  lastClaim = now;
+
+  document.getElementById("balance").innerText = "Balance: " + balance;
+  document.getElementById("timer").innerText = "Reward +50 ✅";
+
+  // SAVE TO FIREBASE
+  await updateDoc(doc(db, "users", currentUser.uid), {
+    balance: balance,
+    lastClaim: lastClaim
+  });
+}
+
+</script>
+
+</body>
+  </html>
