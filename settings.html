@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Settings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;background:#ff7b00;color:white;text-align:center;}
+.card{background:white;color:black;margin:15px;padding:15px;border-radius:15px;}
+input{padding:10px;margin:5px;width:80%;}
+button{padding:10px;background:#ff7b00;color:white;border:none;border-radius:10px;}
+</style>
+</head>
+
+<body>
+
+<h2>⚙️ Settings</h2>
+
+<div class="card">
+<h3>🏦 Total Bank</h3>
+<p id="bank">0 Ks</p>
+</div>
+
+<div class="card">
+<h3>🔐 Change Password</h3>
+<input placeholder="New Password">
+<button>Update</button>
+</div>
+
+<div class="card">
+<button onclick="logout()">Logout</button>
+</div>
+
+<script>
+function logout(){
+  alert("Logged out");
+}
+</script>
+
+</body>
+</html>
