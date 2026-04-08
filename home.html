@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Coco Mining</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #ff7b00, #ffb347);
+      color: white;
+      text-align: center;
+    }
+
+    body.dark {
+      background: #121212;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+    }
+
+    .card {
+      background: white;
+      color: black;
+      margin: 15px;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    body.dark .card {
+      background: #1e1e1e;
+      color: white;
+    }
+
+    .balance {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .btn {
+      padding: 12px;
+      width: 90%;
+      border: none;
+      border-radius: 10px;
+      background: #ff7b00;
+      color: white;
+      font-weight: bold;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #ff5500;
+    }
+
+    .progress {
+      width: 90%;
+      height: 10px;
+      background: #ddd;
+      margin: 10px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: #ff7b00;
+    }
+
+    input {
+      width: 85%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="top-bar">
+  <button onclick="toggleDark()">🌙</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<h2>⛏️ Coco Mining</h2>
+<p id="user"></p>
+
+<!-- BALANCE -->
+<div class="card">
+  <h3>💰 Balance</h3>
+  <div class="balance" id="balance">0</div>
+  <p>VIP Level: <span id="vip">0</span></p>
+</div>
+
+<!-- MINING -->
+<div class="card">
+  <h3>⛏️ Mining</h3>
+  <p id="timer">Ready</p>
+
+  <div class="progress">
+    <div class="bar" id="bar"></div>
+  </div>
+
+  <button class="btn" onclick="mine()">Start Mining</button>
+</div>
+
+<!-- VIP -->
+<div class="card">
+  <h3>💎 VIP Upgrade</h3>
+  <button class="btn" onclick="buyVIP(1)">VIP 1 (100)</button>
+  <button class="btn" onclick="buyVIP(2)">VIP 2 (200)</button>
+  <button class="btn" onclick="buyVIP(3)">VIP 3 (300)</button>
+</div>
+
+<!-- INVITE -->
+<div class="card">
+  <h3>👥 Invite</h3>
+  <p>Your Code: <span id="code"></span></p>
+</div>
+
+<!-- WITHDRAW -->
+<div class="card">
+  <h3>💸 Withdraw</h3>
+  <input id="amount" placeholder="Enter amount">
+  <button class="btn" onclick="withdraw()">Withdraw</button>
+</div>
+
+<script>
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+</script>
+
+<!-- FIREBASE -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, getDoc, updateDoc, setDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4",
+  storageBucket: "coco-website-aafe4.firebasestorage.app",
+  messagingSenderId: "970278650841",
+  appId: "1:970278650841:web:248a3a4be7365d03f80fc8"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser, balance=0, lastClaim=0, vip=0, inviteCode="";
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    currentUser = user;
+    document.getElementById("user").innerText = user.email;
+
+    const snap = await getDoc(doc(db, "users", user.uid));
+
+    if(snap.exists()){
+      let data = snap.data();
+      balance = data.balance || 0;
+      lastClaim = data.lastClaim || 0;
+      vip = data.vip || 0;
+      inviteCode = data.inviteCode || user.uid.substring(0,6);
+
+      document.getElementById("balance").innerText = balance;
+      document.getElementById("vip").innerText = vip;
+      document.getElementById("code").innerText = inviteCode;
+
+      await updateDoc(doc(db, "users", user.uid), {
+        inviteCode: inviteCode
+      });
+    }
+
+  }else{
+    window.location.href = "index.html";
+  }
+});
+
+// LOGOUT
+window.logout = function(){
+  signOut(auth);
+}
+
+// MINING
+window.mine = async function(){
+  let now = Date.now();
+  let cooldown = 10000;
+
+  if(now - lastClaim < cooldown){
+    let sec = Math.floor((cooldown - (now-lastClaim))/1000);
+    document.getElementById("timer").innerText = "Wait " + sec + "s";
+    return;
+  }
+
+  let reward = 50;
+  if(vip==1) reward=100;
+  if(vip==2) reward=200;
+  if(vip==3) reward=500;
+
+  balance += reward;
+  lastClaim = now;
+
+  document.getElementById("balance").innerText = balance;
+  document.getElementById("timer").innerText = "+"+reward+" Coin";
+
+  let bar = document.getElementById("bar");
+  bar.style.width = "100%";
+  setTimeout(()=>{ bar.style.width="0%"; },1000);
+
+  await updateDoc(doc(db, currentUser.uid), {
+    balance: balance,
+    lastClaim: lastClaim
+  });
+}
+
+// VIP
+window.buyVIP = async function(level){
+  let cost = level*100;
+
+  if(balance < cost){
+    alert("Not enough balance");
+    return;
+  }
+
+  balance -= cost;
+  vip = level;
+
+  document.getElementById("balance").innerText = balance;
+  document.getElementById("vip").innerText = vip;
+
+  await updateDoc(doc(db, currentUser.uid), {
+    balance: balance,
+    vip: vip
+  });
+
+  alert("VIP "+level+" Activated");
+}
+
+// WITHDRAW
+window.withdraw = async function(){
+  let amount = parseInt(document.getElementById("amount").value);
+
+  if(amount > balance){
+    alert("Not enough balance");
+    return;
+  }
+
+  if(amount < 100){
+    alert("Minimum 100");
+    return;
+  }
+
+  balance -= amount;
+  document.getElementById("balance").innerText = balance;
+
+  await updateDoc(doc(db, currentUser.uid), {
+    balance: balance
+  });
+
+  await setDoc(doc(db, "withdraws", currentUser.uid+Date.now()), {
+    user: currentUser.uid,
+    amount: amount,
+    status: "pending"
+  });
+
+  alert("Withdraw Requested");
+}
+
+</script>
+
+</body>
+</html>
