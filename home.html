@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Home - Coco Mining</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;text-align:center;background:#ff7b00;color:white;}
+.card{background:white;color:black;margin:15px;padding:20px;border-radius:15px;}
+.btn{padding:10px;border:none;background:#ff7b00;color:white;border-radius:10px;}
+.nav{position:fixed;bottom:0;width:100%;display:flex;justify-content:space-around;background:white;padding:10px;}
+</style>
+</head>
+
+<body>
+
+<h2>⛏️ Mining</h2>
+
+<div class="card">
+  <h3 id="balance">0</h3>
+  <p>Total Balance</p>
+</div>
+
+<div class="card">
+  <p id="timer">Ready</p>
+  <button class="btn" onclick="mine()">Start Mining</button>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="home.html">🏠</a>
+  <a href="vip.html">💎</a>
+  <a href="team.html">👥</a>
+  <a href="settings.html">⚙️</a>
+</div>
+
+<script>
+// mining simple demo
+function mine(){
+  alert("Mining...");
+}
+</script>
+
+</body>
+</html>
