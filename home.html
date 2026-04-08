@@ -1,0 +1,84 @@
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, getDoc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+let balance = 0;
+let vip = 0;
+let vipAmount = 0;
+let lastProfit = 0;
+
+// ✅ LOAD USER DATA
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+
+    currentUser = user;
+
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+
+    if(snap.exists()){
+      let data = snap.data();
+
+      balance = data.balance || 0;
+      vip = data.vip || 0;
+      vipAmount = data.vipAmount || 0;
+      lastProfit = data.lastProfit || 0;
+
+      document.getElementById("balance").innerText = balance;
+
+      autoMining(); // 🔥 RUN
+    }
+
+  }else{
+    window.location.href = "index.html";
+  }
+});
+
+// ✅ AUTO MINING
+async function autoMining(){
+
+  let now = Date.now();
+  let oneDay = 86400000;
+
+  if(now - lastProfit < oneDay) return;
+  if(vip == 0) return;
+
+  let percent = 0;
+
+  if(vip==1) percent=0.01;
+  if(vip==2) percent=0.015;
+  if(vip==3) percent=0.02;
+  if(vip==4) percent=0.025;
+
+  let profit = vipAmount * percent;
+
+  balance += profit;
+  lastProfit = now;
+
+  document.getElementById("balance").innerText = Math.floor(balance);
+
+  await updateDoc(doc(db,"users",currentUser.uid),{
+    balance: balance,
+    lastProfit: lastProfit
+  });
+
+  alert("Daily profit added 💰");
+}
+
+</script>
