@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      margin-top: 50px;
+    }
+
+    h1 {
+      font-size: 30px;
+    }
+
+    .card {
+      background: white;
+      color: black;
+      margin: 20px auto;
+      padding: 15px;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .load {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .vip {
+      background: gold;
+    }
+
+    .money {
+      background: #00c6ff;
+      color: white;
+    }
+
+    .logout {
+      background: red;
+      color: white;
+      margin-top: 20px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>👑 Admin Dashboard</h1>
+  <p id="msg"></p>
+
+  <button class="load" onclick="loadUsers()">📊 Load Users</button>
+
+  <div id="users"></div>
+
+  <button class="logout" onclick="logout()">Logout</button>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, collection, getDocs, doc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_UID = "W98lHziAPKUM5Si6hB5l0DXfR5H2";
+
+// 🔐 Protect
+onAuthStateChanged(auth, (user)=>{
+  if(!user || user.uid !== ADMIN_UID){
+    document.getElementById("msg").innerText = "Access Denied ❌";
+    setTimeout(()=>{
+      window.location.href = "index.html";
+    },2000);
+  }else{
+    document.getElementById("msg").innerText = "Welcome Admin 👑";
+  }
+});
+
+// 📊 Load Users
+window.loadUsers = async function(){
+  const querySnapshot = await getDocs(collection(db, "users"));
+  let html = "";
+
+  querySnapshot.forEach((docSnap)=>{
+    let user = docSnap.data();
+
+    html += `
+      <div class="card">
+        <p>📱 ${user.phone}</p>
+        <p>💰 ${user.balance} Ks</p>
+        <p>💎 VIP: ${user.vip}</p>
+
+        <button class="vip" onclick="makeVIP('${docSnap.id}')">VIP</button>
+        <button class="money" onclick="addMoney('${docSnap.id}')">+1000</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("users").innerHTML = html;
+}
+
+// 💎 VIP
+window.makeVIP = async function(uid){
+  await updateDoc(doc(db,"users",uid),{
+    vip: true
+  });
+  alert("VIP Updated ✅");
+}
+
+// 💰 Money
+window.addMoney = async function(uid){
+  await updateDoc(doc(db,"users",uid),{
+    balance: 1000
+  });
+  alert("Money Added 💰");
+}
+
+// Logout
+window.logout = function(){
+  signOut(auth);
+  window.location.href = "index.html";
+}
+
+</script>
+
+</body>
+</html>
