@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Coco Mining</title>
+</head>
+
+<body style="text-align:center; font-family:Arial;">
+
+<h2>⛏️ Coco Mining Login</h2>
+
+<input id="email" placeholder="Email"><br><br>
+<input id="password" type="password" placeholder="Password"><br><br>
+
+<button onclick="signup()">Signup</button>
+<button onclick="login()">Login</button>
+
+<p id="status"></p>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import { getFirestore, doc, setDoc } 
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMUs2OC2ZH5tKb86FSuW9NwdDSIvZEzaA",
+  authDomain: "coco-website-aafe4.firebaseapp.com",
+  projectId: "coco-website-aafe4"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// 🔐 ADMIN UID
+const ADMIN_UID = "W98lHziAPKUM5Si6hB5l0DXfR5H2";
+
+// Signup
+window.signup = async function(){
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
+
+  try{
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      balance: 0,
+      vip: 0,
+      lastClaim: 0
+    });
+
+    document.getElementById("status").innerText = "Signup Success ✅";
+
+  }catch(err){
+    document.getElementById("status").innerText = err.message;
+  }
+}
+
+// Login
+window.login = async function(){
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
+
+  try{
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+    // 🔥 UID CHECK
+    if(userCredential.user.uid === ADMIN_UID){
+      window.location.href = "admin.html";
+    }else{
+      window.location.href = "home.html";
+    }
+
+  }catch(err){
+    document.getElementById("status").innerText = err.message;
+  }
+}
+
+</script>
+
+</body>
+</html>
