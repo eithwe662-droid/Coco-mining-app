@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audio App Login</title>
+
+  <style>
+    body{
+      margin:0;
+      font-family:Arial;
+      background: linear-gradient(135deg,#1e3c72,#2a5298);
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      color:white;
+    }
+
+    .box{
+      background:rgba(0,0,0,0.6);
+      padding:30px;
+      border-radius:15px;
+      width:300px;
+      text-align:center;
+    }
+
+    input{
+      width:90%;
+      padding:10px;
+      margin:8px;
+      border:none;
+      border-radius:8px;
+    }
+
+    button{
+      padding:10px 20px;
+      margin:10px;
+      border:none;
+      border-radius:8px;
+      background:#ff9800;
+      color:white;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#e68900;
+    }
+
+    .link{
+      color:#00e5ff;
+      cursor:pointer;
+      font-size:14px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>🎤 Audio App</h2>
+
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+
+<br>
+
+<button onclick="loginUser()">User Login</button>
+<button onclick="loginAdmin()">Admin Login</button>
+
+<p class="link" onclick="signup()">Create Account</p>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+// Save users (simple demo)
+let users = JSON.parse(localStorage.getItem("users")) || [];
+
+// SIGNUP
+function signup(){
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
+
+  if(email=="" || password==""){
+    msg("Fill all fields!");
+    return;
+  }
+
+  users.push({email,password,role:"user"});
+  localStorage.setItem("users", JSON.stringify(users));
+
+  msg("Signup success!");
+}
+
+// USER LOGIN
+function loginUser(){
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
+
+  let user = users.find(u => u.email==email && u.password==password && u.role=="user");
+
+  if(user){
+    msg("User Login Success!");
+    window.location = "home.html";
+  }else{
+    msg("Wrong user account!");
+  }
+}
+
+// ADMIN LOGIN (fixed)
+function loginAdmin(){
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
+
+  // Admin account (hardcoded)
+  if(email=="admin@gmail.com" && password=="123456"){
+    msg("Admin Login Success!");
+    window.location = "admin.html";
+  }else{
+    msg("Wrong admin!");
+  }
+}
+
+// message
+function msg(text){
+  document.getElementById("msg").innerText = text;
+}
+</script>
+
+</body>
+</html>
